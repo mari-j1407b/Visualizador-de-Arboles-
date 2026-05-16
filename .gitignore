@@ -1,0 +1,7 @@
+# Archivos de estado y colas de ejecución del entorno
+memory_ops.jsonl
+runtime_queue.jsonl
+state.json
+settings.json
+arbol_guardado.json
+__pycache__/
