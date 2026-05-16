@@ -3,4 +3,4 @@ class Nodo:
         self.valor = valor
         self.izquierdo = None
         self.derecho = None
-        self.altura = 1  # útil para AVL
+        self.altura = 1 
