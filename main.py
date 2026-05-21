@@ -1,6 +1,5 @@
-# main.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog  # <--- Agregamos filedialog aquí
 from arbol_bst import ArbolBST
 from arbol_avl import ArbolAVL
 from visualizador import VisualizadorArbol
@@ -69,58 +68,112 @@ class App:
         messagebox.showinfo("Cambio de árbol", f"Ahora trabajando con árbol {self.tipo_arbol.get()}")
         self.actualizar_vista()
     
+    def ejecutar_paso_animacion(self, generador, titulo):
+        try:
+            resultado = next(generador)
+            if resultado is not None and isinstance(resultado, tuple):
+                val, accion = resultado
+                
+                if "fin_" not in accion:
+                    self.visualizador.restaurar_colores()
+                
+                if val and hasattr(val, 'valor'):
+                    color = "yellow"
+                    if "rotacion" in accion: color = "orange"
+                    elif "eliminando" in accion: color = "red"
+                    elif "insertado" in accion: color = "green"
+                    elif accion == "encontrado": color = "green"
+                    
+                    self.visualizador.resaltar_nodo(val.valor, color)
+                
+                if accion.startswith("fin_"):
+                    self.actualizar_vista()
+                    if "busqueda" in accion:
+                        if val:
+                            messagebox.showinfo(titulo, f"Valor encontrado en el árbol")
+                        else:
+                            messagebox.showinfo(titulo, f"Valor NO encontrado")
+                    elif "orden:" in accion:
+                        messagebox.showinfo(titulo, accion.split(":", 1)[1])
+                    return
+            
+            self.ventana.after(600, self.ejecutar_paso_animacion, generador, titulo)
+        except StopIteration:
+            self.actualizar_vista()
+
     def insertar(self):
         try:
             valor = int(self.entry_valor.get())
-            self.arbol.insertar(valor)
+            generador = self.arbol.insertar(valor)
             self.entry_valor.delete(0, tk.END)
-            self.actualizar_vista()
+            self.ejecutar_paso_animacion(generador, "Inserción")
         except ValueError:
             messagebox.showerror("Error", "Ingrese un número entero válido")
     
     def buscar(self):
         try:
             valor = int(self.entry_valor.get())
-            resultado = self.arbol.buscar(valor)
-            if resultado:
-                messagebox.showinfo("Búsqueda", f"Valor {valor} encontrado en el árbol")
-            else:
-                messagebox.showinfo("Búsqueda", f"Valor {valor} NO encontrado")
+            generador = self.arbol.buscar(valor)
+            self.ejecutar_paso_animacion(generador, "Búsqueda")
         except ValueError:
             messagebox.showerror("Error", "Ingrese un número entero válido")
     
     def eliminar(self):
         try:
             valor = int(self.entry_valor.get())
-            self.arbol.eliminar(valor)
+            generador = self.arbol.eliminar(valor)
             self.entry_valor.delete(0, tk.END)
-            self.actualizar_vista()
+            self.ejecutar_paso_animacion(generador, "Eliminación")
         except ValueError:
             messagebox.showerror("Error", "Ingrese un número entero válido")
     
     def mostrar_preorden(self):
-        resultado = self.arbol.recorrido_preorden()
-        messagebox.showinfo("Recorrido Preorden", f"Preorden: {resultado}")
+        generador = self.arbol.recorrido_preorden()
+        self.ejecutar_paso_animacion(generador, "Recorrido Preorden")
     
     def mostrar_inorden(self):
-        resultado = self.arbol.recorrido_inorden()
-        messagebox.showinfo("Recorrido Inorden", f"Inorden: {resultado}")
+        generador = self.arbol.recorrido_inorden()
+        self.ejecutar_paso_animacion(generador, "Recorrido Inorden")
     
     def mostrar_postorden(self):
-        resultado = self.arbol.recorrido_postorden()
-        messagebox.showinfo("Recorrido Postorden", f"Postorden: {resultado}")
+        generador = self.arbol.recorrido_postorden()
+        self.ejecutar_paso_animacion(generador, "Recorrido Postorden")
     
     def guardar(self):
-        guardar_arbol(self.arbol.raiz, "arbol_guardado.json")
-        messagebox.showinfo("Guardar", "Árbol guardado en 'arbol_guardado.json'")
-    
+            # Abre el explorador de archivos para elegir dónde y con qué nombre guardar
+            ruta_archivo = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("Archivos JSON", "*.json"), ("Todos los archivos", "*.*")],
+                title="Guardar Árbol"
+            )
+            
+            # Si el usuario no cancela el cuadro de diálogo
+            if ruta_archivo:
+                guardar_arbol(self.arbol.raiz, ruta_archivo)
+                # Extraemos solo el nombre del archivo para mostrarlo en el mensaje
+                import os
+                nombre_archivo = os.path.basename(ruta_archivo)
+                messagebox.showinfo("Guardar", f"Árbol guardado exitosamente como '{nombre_archivo}'")
+
     def cargar(self):
-        from nodo import Nodo  # necesario para deserializar
-        arbol_cargado = cargar_arbol("arbol_guardado.json", ArbolBST)
-        if arbol_cargado:
-            self.arbol = arbol_cargado
-            self.actualizar_vista()
-            messagebox.showinfo("Cargar", "Árbol cargado correctamente")
+        from nodo import Nodo  # Necesario para deserializar
+        
+        # Abre el explorador de archivos para seleccionar qué árbol abrir
+        ruta_archivo = filedialog.askopenfilename(
+            filetypes=[("Archivos JSON", "*.json"), ("Todos los archivos", "*.*")],
+            title="Seleccionar Árbol para Cargar"
+        )
+        
+        # Si el usuario selecciona un archivo
+        if ruta_archivo:
+            # Determinamos el tipo de árbol correcto según la selección actual de la GUI
+            tipo_actual = ArbolBST if self.tipo_arbol.get() == "BST" else ArbolAVL
+            
+            arbol_cargado = cargar_arbol(ruta_archivo, tipo_actual)
+            if arbol_cargado:
+                self.arbol = arbol_cargado
+                self.actualizar_vista()
+                messagebox.showinfo("Cargar", "Árbol cargado correctamente")
     
     def actualizar_vista(self):
         """Actualiza el canvas y la información del árbol"""

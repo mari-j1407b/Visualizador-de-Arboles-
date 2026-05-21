@@ -1,0 +1,21 @@
+{
+    "valor": 1,
+    "izquierdo": {
+        "valor": 0,
+        "izquierdo": null,
+        "derecho": null
+    },
+    "derecho": {
+        "valor": 2,
+        "izquierdo": null,
+        "derecho": {
+            "valor": 3,
+            "izquierdo": null,
+            "derecho": {
+                "valor": 6,
+                "izquierdo": null,
+                "derecho": null
+            }
+        }
+    }
+}

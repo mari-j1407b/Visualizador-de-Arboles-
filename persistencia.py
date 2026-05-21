@@ -1,4 +1,5 @@
 import json
+from nodo import Nodo
 
 def guardar_arbol(nodo, archivo):
     def serializar(n):
@@ -18,7 +19,7 @@ def cargar_arbol(archivo, clase_arbol):
     def deserializar(d):
         if d is None:
             return None
-        nodo = nodo(d["valor"])
+        nodo = Nodo(d["valor"])
         nodo.izquierdo = deserializar(d["izquierdo"])
         nodo.derecho = deserializar(d["derecho"])
         return nodo
