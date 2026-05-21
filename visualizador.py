@@ -20,5 +20,11 @@ class VisualizadorArbol:
         # Nodo
         self.canvas.create_oval(x - self.radio_nodo, y - self.radio_nodo,
                                 x + self.radio_nodo, y + self.radio_nodo,
-                                fill="lightblue")
-        self.canvas.create_text(x, y, text=str(nodo.valor))
+                                fill="lightblue", tags=(f"nodo_{nodo.valor}", "nodo"))
+        self.canvas.create_text(x, y, text=str(nodo.valor), tags=(f"texto_{nodo.valor}", "texto"))
+
+    def resaltar_nodo(self, valor, color="yellow"):
+        self.canvas.itemconfig(f"nodo_{valor}", fill=color)
+
+    def restaurar_colores(self):
+        self.canvas.itemconfig("nodo", fill="lightblue")

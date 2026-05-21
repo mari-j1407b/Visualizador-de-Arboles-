@@ -5,38 +5,56 @@ class ArbolBST:
         self.raiz = None
 
     def insertar(self, valor):
-        self.raiz = self._insertar_rec(self.raiz, valor)
+        self.raiz = yield from self._insertar_rec(self.raiz, valor)
+        yield None, "fin_insercion"
 
     def _insertar_rec(self, nodo, valor):
         if nodo is None:
-            return Nodo(valor)
+            nuevo = Nodo(valor)
+            yield nuevo, "insertado"
+            return nuevo
+            
+        yield nodo, "visitando"
         if valor < nodo.valor:
-            nodo.izquierdo = self._insertar_rec(nodo.izquierdo, valor)
+            nodo.izquierdo = yield from self._insertar_rec(nodo.izquierdo, valor)
         elif valor > nodo.valor:
-            nodo.derecho = self._insertar_rec(nodo.derecho, valor)
+            nodo.derecho = yield from self._insertar_rec(nodo.derecho, valor)
         return nodo
 
     def buscar(self, valor):
-        return self._buscar_rec(self.raiz, valor)
+        res = yield from self._buscar_rec(self.raiz, valor)
+        yield res, "fin_busqueda"
+        return res
 
     def _buscar_rec(self, nodo, valor):
-        if nodo is None or nodo.valor == valor:
+        if nodo is None:
+            yield None, "no_encontrado"
+            return None
+            
+        yield nodo, "visitando"
+        if nodo.valor == valor:
+            yield nodo, "encontrado"
             return nodo
+            
         if valor < nodo.valor:
-            return self._buscar_rec(nodo.izquierdo, valor)
-        return self._buscar_rec(nodo.derecho, valor)
+            return (yield from self._buscar_rec(nodo.izquierdo, valor))
+        return (yield from self._buscar_rec(nodo.derecho, valor))
 
     def eliminar(self, valor):
-        self.raiz = self._eliminar_rec(self.raiz, valor)
+        self.raiz = yield from self._eliminar_rec(self.raiz, valor)
+        yield None, "fin_eliminacion"
 
     def _eliminar_rec(self, nodo, valor):
         if nodo is None:
             return None
+            
+        yield nodo, "visitando"
         if valor < nodo.valor:
-            nodo.izquierdo = self._eliminar_rec(nodo.izquierdo, valor)
+            nodo.izquierdo = yield from self._eliminar_rec(nodo.izquierdo, valor)
         elif valor > nodo.valor:
-            nodo.derecho = self._eliminar_rec(nodo.derecho, valor)
+            nodo.derecho = yield from self._eliminar_rec(nodo.derecho, valor)
         else:
+            yield nodo, "eliminando"
             # Caso 1: sin hijos
             if nodo.izquierdo is None and nodo.derecho is None:
                 return None
@@ -48,7 +66,8 @@ class ArbolBST:
             # Caso 3: dos hijos
             sucesor = self._min_valor_nodo(nodo.derecho)
             nodo.valor = sucesor.valor
-            nodo.derecho = self._eliminar_rec(nodo.derecho, sucesor.valor)
+            yield nodo, "reemplazando_con_sucesor"
+            nodo.derecho = yield from self._eliminar_rec(nodo.derecho, sucesor.valor)
         return nodo
 
     def _min_valor_nodo(self, nodo):
@@ -59,35 +78,38 @@ class ArbolBST:
 
     def recorrido_preorden(self):
         resultado = []
-        self._preorden_rec(self.raiz, resultado)
-        return resultado
+        yield from self._preorden_rec(self.raiz, resultado)
+        yield None, f"fin_preorden:{resultado}"
 
     def _preorden_rec(self, nodo, resultado):
         if nodo:
+            yield nodo, "visitando"
             resultado.append(nodo.valor)
-            self._preorden_rec(nodo.izquierdo, resultado)
-            self._preorden_rec(nodo.derecho, resultado)
+            yield from self._preorden_rec(nodo.izquierdo, resultado)
+            yield from self._preorden_rec(nodo.derecho, resultado)
 
     def recorrido_inorden(self):
         resultado = []
-        self._inorden_rec(self.raiz, resultado)
-        return resultado
+        yield from self._inorden_rec(self.raiz, resultado)
+        yield None, f"fin_inorden:{resultado}"
 
     def _inorden_rec(self, nodo, resultado):
         if nodo:
-            self._inorden_rec(nodo.izquierdo, resultado)
+            yield from self._inorden_rec(nodo.izquierdo, resultado)
+            yield nodo, "visitando"
             resultado.append(nodo.valor)
-            self._inorden_rec(nodo.derecho, resultado)
+            yield from self._inorden_rec(nodo.derecho, resultado)
 
     def recorrido_postorden(self):
         resultado = []
-        self._postorden_rec(self.raiz, resultado)
-        return resultado
+        yield from self._postorden_rec(self.raiz, resultado)
+        yield None, f"fin_postorden:{resultado}"
 
     def _postorden_rec(self, nodo, resultado):
         if nodo:
-            self._postorden_rec(nodo.izquierdo, resultado)
-            self._postorden_rec(nodo.derecho, resultado)
+            yield from self._postorden_rec(nodo.izquierdo, resultado)
+            yield from self._postorden_rec(nodo.derecho, resultado)
+            yield nodo, "visitando"
             resultado.append(nodo.valor)
 
     def altura(self):
